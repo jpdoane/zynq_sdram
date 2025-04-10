@@ -49,16 +49,6 @@ usb:
     reset_pin: MIO 46
 ps_pl:
   m_axi_gp0: yes
-  m_axi_gp1: yes
   fclk0:
     freq_mhz: 50
-  fclk1:
-    freq_mhz: 125
-  fclk2:
-    freq_mhz: 50
-  fclk3:
-    freq_mhz: 50
   frst0: yes
-  frst1: yes
-  frst2: yes
-  frst3: yes
