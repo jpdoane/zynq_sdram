@@ -1,9 +1,0 @@
-[submodule "core_sdram_axi4"]
-	path = core_sdram_axi4
-	url = https://github.com/ultraembedded/core_sdram_axi4.git
-[submodule "taxi"]
-	path = taxi
-	url = https://github.com/fpganinja/taxi.git
-[submodule "fuse-zynq"]
-	path = fuse-zynq
-	url = git@github.com:craigjb/fuse-zynq.git

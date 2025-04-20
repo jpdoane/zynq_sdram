@@ -2,8 +2,6 @@
 
 module zynq_sdram
 (
-    input CLK_125MHZ,
-
     //GPIO
     input [1:0] SW,
     input [3:0] btn,
@@ -20,197 +18,285 @@ module zynq_sdram
     output logic sdram_ras_n,
     output logic sdram_cs_n,
     output logic sdram_ldqm,
-    output logic sdram_udqm  
+    output logic sdram_udqm,
+
+    // DDR and other IO
+    inout [14:0]DDR_addr,
+    inout [2:0]DDR_ba,
+    inout DDR_cas_n,
+    inout DDR_ck_n,
+    inout DDR_ck_p,
+    inout DDR_cke,
+    inout DDR_cs_n,
+    inout [3:0]DDR_dm,
+    inout [31:0]DDR_dq,
+    inout [3:0]DDR_dqs_n,
+    inout [3:0]DDR_dqs_p,
+    inout DDR_odt,
+    inout DDR_ras_n,
+    inout DDR_reset_n,
+    inout DDR_we_n,
+    inout FIXED_IO_ddr_vrn,
+    inout FIXED_IO_ddr_vrp,
+    inout [53:0]FIXED_IO_mio,
+    inout FIXED_IO_ps_clk,
+    inout FIXED_IO_ps_porb,
+    inout FIXED_IO_ps_srstb
 );
 
-  assign LED = btn;
+  assign LED[0] = SW[0];
+  assign LED[1] = 1;
 
-  wire FCLK0;
-  wire FRST0;
-  wire axi_clk = FCLK0;
-  wire axi_rst = FRST0;
-  wire [31:0]M_AXI_GP0_araddr;
-  wire [1:0]M_AXI_GP0_arburst;
-  wire [3:0]M_AXI_GP0_arcache;
-  wire [11:0]M_AXI_GP0_arid;
-  wire [3:0]M_AXI_GP0_arlen;
-  wire [1:0]M_AXI_GP0_arlock;
-  wire [2:0]M_AXI_GP0_arprot;
-  wire [3:0]M_AXI_GP0_arqos;
-  wire M_AXI_GP0_arready;
-  wire [2:0]M_AXI_GP0_arsize;
-  wire M_AXI_GP0_arvalid;
-  wire [31:0]M_AXI_GP0_awaddr;
-  wire [1:0]M_AXI_GP0_awburst;
-  wire [3:0]M_AXI_GP0_awcache;
-  wire [11:0]M_AXI_GP0_awid;
-  wire [3:0]M_AXI_GP0_awlen;
-  wire [1:0]M_AXI_GP0_awlock;
-  wire [2:0]M_AXI_GP0_awprot;
-  wire [3:0]M_AXI_GP0_awqos;
-  wire M_AXI_GP0_awready;
-  wire [2:0]M_AXI_GP0_awsize;
-  wire M_AXI_GP0_awvalid;
-  wire [11:0]M_AXI_GP0_bid;
-  wire M_AXI_GP0_bready;
-  wire [1:0]M_AXI_GP0_bresp;
-  wire M_AXI_GP0_bvalid;
-  wire [31:0]M_AXI_GP0_rdata;
-  wire [11:0]M_AXI_GP0_rid;
-  wire M_AXI_GP0_rlast;
-  wire M_AXI_GP0_rready;
-  wire [1:0]M_AXI_GP0_rresp;
-  wire M_AXI_GP0_rvalid;
-  wire [31:0]M_AXI_GP0_wdata;
-  wire [11:0]M_AXI_GP0_wid;
-  wire M_AXI_GP0_wlast;
-  wire M_AXI_GP0_wready;
-  wire [3:0]M_AXI_GP0_wstrb;
-  wire M_AXI_GP0_wvalid;
-  wire [1:0]USBIND_0_port_indctl;
-  wire USBIND_0_vbus_pwrfault;
-  wire USBIND_0_vbus_pwrselect;
+  wire ACLK;
+  wire ARST;
+  wire ARSTN;
 
-  zynqps zynqps_i
-       (.FCLK0(FCLK0),
-        .FRST0(FRST0),
-        .M_AXI_GP0_ACLK(axi_clk),
-        .M_AXI_GP0_araddr(M_AXI_GP0_araddr),
-        .M_AXI_GP0_arburst(M_AXI_GP0_arburst),
-        .M_AXI_GP0_arcache(M_AXI_GP0_arcache),
-        .M_AXI_GP0_arid(M_AXI_GP0_arid),
-        .M_AXI_GP0_arlen(M_AXI_GP0_arlen),
-        .M_AXI_GP0_arlock(M_AXI_GP0_arlock),
-        .M_AXI_GP0_arprot(M_AXI_GP0_arprot),
-        .M_AXI_GP0_arqos(M_AXI_GP0_arqos),
-        .M_AXI_GP0_arready(M_AXI_GP0_arready),
-        .M_AXI_GP0_arsize(M_AXI_GP0_arsize),
-        .M_AXI_GP0_arvalid(M_AXI_GP0_arvalid),
-        .M_AXI_GP0_awaddr(M_AXI_GP0_awaddr),
-        .M_AXI_GP0_awburst(M_AXI_GP0_awburst),
-        .M_AXI_GP0_awcache(M_AXI_GP0_awcache),
-        .M_AXI_GP0_awid(M_AXI_GP0_awid),
-        .M_AXI_GP0_awlen(M_AXI_GP0_awlen),
-        .M_AXI_GP0_awlock(M_AXI_GP0_awlock),
-        .M_AXI_GP0_awprot(M_AXI_GP0_awprot),
-        .M_AXI_GP0_awqos(M_AXI_GP0_awqos),
-        .M_AXI_GP0_awready(M_AXI_GP0_awready),
-        .M_AXI_GP0_awsize(M_AXI_GP0_awsize),
-        .M_AXI_GP0_awvalid(M_AXI_GP0_awvalid),
-        .M_AXI_GP0_bid(M_AXI_GP0_bid),
-        .M_AXI_GP0_bready(M_AXI_GP0_bready),
-        .M_AXI_GP0_bresp(M_AXI_GP0_bresp),
-        .M_AXI_GP0_bvalid(M_AXI_GP0_bvalid),
-        .M_AXI_GP0_rdata(M_AXI_GP0_rdata),
-        .M_AXI_GP0_rid(M_AXI_GP0_rid),
-        .M_AXI_GP0_rlast(M_AXI_GP0_rlast),
-        .M_AXI_GP0_rready(M_AXI_GP0_rready),
-        .M_AXI_GP0_rresp(M_AXI_GP0_rresp),
-        .M_AXI_GP0_rvalid(M_AXI_GP0_rvalid),
-        .M_AXI_GP0_wdata(M_AXI_GP0_wdata),
-        .M_AXI_GP0_wid(M_AXI_GP0_wid),
-        .M_AXI_GP0_wlast(M_AXI_GP0_wlast),
-        .M_AXI_GP0_wready(M_AXI_GP0_wready),
-        .M_AXI_GP0_wstrb(M_AXI_GP0_wstrb),
-        .M_AXI_GP0_wvalid(M_AXI_GP0_wvalid),
-        .USBIND_0_port_indctl(USBIND_0_port_indctl),
-        .USBIND_0_vbus_pwrfault(USBIND_0_vbus_pwrfault),
-        .USBIND_0_vbus_pwrselect(USBIND_0_vbus_pwrselect));
+  wire [31:0]AXI_SDRAM_araddr;
+  wire [1:0]AXI_SDRAM_arburst;
+  wire [3:0]AXI_SDRAM_arcache;
+  wire [7:0]AXI_SDRAM_arlen;
+  wire [0:0]AXI_SDRAM_arlock;
+  wire [2:0]AXI_SDRAM_arprot;
+  wire [3:0]AXI_SDRAM_arqos;
+  wire AXI_SDRAM_arready;
+  wire [2:0]AXI_SDRAM_arsize;
+  wire AXI_SDRAM_arvalid;
+  wire [31:0]AXI_SDRAM_awaddr;
+  wire [1:0]AXI_SDRAM_awburst;
+  wire [3:0]AXI_SDRAM_awcache;
+  wire [7:0]AXI_SDRAM_awlen;
+  wire [0:0]AXI_SDRAM_awlock;
+  wire [2:0]AXI_SDRAM_awprot;
+  wire [3:0]AXI_SDRAM_awqos;
+  wire AXI_SDRAM_awready;
+  wire [2:0]AXI_SDRAM_awsize;
+  wire AXI_SDRAM_awvalid;
+  wire AXI_SDRAM_bready;
+  wire [1:0]AXI_SDRAM_bresp;
+  wire AXI_SDRAM_bvalid;
+  wire [31:0]AXI_SDRAM_rdata;
+  wire AXI_SDRAM_rlast;
+  wire AXI_SDRAM_rready;
+  wire [1:0]AXI_SDRAM_rresp;
+  wire AXI_SDRAM_rvalid;
+  wire [31:0]AXI_SDRAM_wdata;
+  wire AXI_SDRAM_wlast;
+  wire AXI_SDRAM_wready;
+  wire [3:0]AXI_SDRAM_wstrb;
+  wire AXI_SDRAM_wvalid;
+  // wire [31:0]M01_AXI_0_araddr;
+  // wire [1:0]M01_AXI_0_arburst;
+  // wire [3:0]M01_AXI_0_arcache;
+  // wire [7:0]M01_AXI_0_arlen;
+  // wire [0:0]M01_AXI_0_arlock;
+  // wire [2:0]M01_AXI_0_arprot;
+  // wire [3:0]M01_AXI_0_arqos;
+  // wire M01_AXI_0_arready;
+  // wire [2:0]M01_AXI_0_arsize;
+  // wire M01_AXI_0_arvalid;
+  // wire [31:0]M01_AXI_0_awaddr;
+  // wire [1:0]M01_AXI_0_awburst;
+  // wire [3:0]M01_AXI_0_awcache;
+  // wire [7:0]M01_AXI_0_awlen;
+  // wire [0:0]M01_AXI_0_awlock;
+  // wire [2:0]M01_AXI_0_awprot;
+  // wire [3:0]M01_AXI_0_awqos;
+  // wire M01_AXI_0_awready;
+  // wire [2:0]M01_AXI_0_awsize;
+  // wire M01_AXI_0_awvalid;
+  // wire M01_AXI_0_bready;
+  // wire [1:0]M01_AXI_0_bresp;
+  // wire M01_AXI_0_bvalid;
+  // wire [31:0]M01_AXI_0_rdata;
+  // wire M01_AXI_0_rlast;
+  // wire M01_AXI_0_rready;
+  // wire [1:0]M01_AXI_0_rresp;
+  // wire M01_AXI_0_rvalid;
+  // wire [31:0]M01_AXI_0_wdata;
+  // wire M01_AXI_0_wlast;
+  // wire M01_AXI_0_wready;
+  // wire [3:0]M01_AXI_0_wstrb;
+  // wire M01_AXI_0_wvalid;
 
 
+  wire          sdram_core_cke;
+  wire          sdram_core_cs;
+  wire          sdram_core_ras;
+  wire          sdram_core_cas;
+  wire          sdram_core_we;
+  wire [  1:0]  sdram_core_dqm;
+  wire [ 12:0]  sdram_core_addr;
+  wire [  1:0]  sdram_core_ba;
+  wire [ 15:0]  sdram_core_data_output;
+  wire          sdram_core_data_out_en;
+  wire  [ 15:0] sdram_core_data_input;
 
-wire [ 15:0]        sdram_data_in_w;
-wire [ 15:0]        sdram_data_out_w;
-wire                sdram_data_out_en_w;
-wire [1:0]          sdram_dqm;
+  zynq_ps_axi
+  u_zynq
+  (
+  .ACLK_in              (ACLK),
+  .ARST                 (ARST),
+  .ARSTN                (ARSTN),
+  .CLK1                 (ACLK),
+  // .CLK2              (CLK2),
+  .DDR_addr             (DDR_addr),
+  .DDR_ba               (DDR_ba),
+  .DDR_cas_n            (DDR_cas_n),
+  .DDR_ck_n             (DDR_ck_n),
+  .DDR_ck_p             (DDR_ck_p),
+  .DDR_cke              (DDR_cke),
+  .DDR_cs_n             (DDR_cs_n),
+  .DDR_dm               (DDR_dm),
+  .DDR_dq               (DDR_dq),
+  .DDR_dqs_n            (DDR_dqs_n),
+  .DDR_dqs_p            (DDR_dqs_p),
+  .DDR_odt              (DDR_odt),
+  .DDR_ras_n            (DDR_ras_n),
+  .DDR_reset_n          (DDR_reset_n),
+  .DDR_we_n             (DDR_we_n),
+  .FIXED_IO_ddr_vrn     (FIXED_IO_ddr_vrn),
+  .FIXED_IO_ddr_vrp     (FIXED_IO_ddr_vrp),
+  .FIXED_IO_mio         (FIXED_IO_mio),
+  .FIXED_IO_ps_clk      (FIXED_IO_ps_clk),
+  .FIXED_IO_ps_porb     (FIXED_IO_ps_porb),
+  .FIXED_IO_ps_srstb    (FIXED_IO_ps_srstb),
+  .M00_AXI_0_araddr     (AXI_SDRAM_araddr),
+  .M00_AXI_0_arburst    (AXI_SDRAM_arburst),
+  .M00_AXI_0_arcache    (AXI_SDRAM_arcache),
+  .M00_AXI_0_arlen      (AXI_SDRAM_arlen),
+  .M00_AXI_0_arlock     (AXI_SDRAM_arlock),
+  .M00_AXI_0_arprot     (AXI_SDRAM_arprot),
+  .M00_AXI_0_arqos      (AXI_SDRAM_arqos),
+  .M00_AXI_0_arready    (AXI_SDRAM_arready),
+  .M00_AXI_0_arsize     (AXI_SDRAM_arsize),
+  .M00_AXI_0_arvalid    (AXI_SDRAM_arvalid),
+  .M00_AXI_0_awaddr     (AXI_SDRAM_awaddr),
+  .M00_AXI_0_awburst    (AXI_SDRAM_awburst),
+  .M00_AXI_0_awcache    (AXI_SDRAM_awcache),
+  .M00_AXI_0_awlen      (AXI_SDRAM_awlen),
+  .M00_AXI_0_awlock     (AXI_SDRAM_awlock),
+  .M00_AXI_0_awprot     (AXI_SDRAM_awprot),
+  .M00_AXI_0_awqos      (AXI_SDRAM_awqos),
+  .M00_AXI_0_awready    (AXI_SDRAM_awready),
+  .M00_AXI_0_awsize     (AXI_SDRAM_awsize),
+  .M00_AXI_0_awvalid    (AXI_SDRAM_awvalid),
+  .M00_AXI_0_bready     (AXI_SDRAM_bready),
+  .M00_AXI_0_bresp      (AXI_SDRAM_bresp),
+  .M00_AXI_0_bvalid     (AXI_SDRAM_bvalid),
+  .M00_AXI_0_rdata      (AXI_SDRAM_rdata),
+  .M00_AXI_0_rlast      (AXI_SDRAM_rlast),
+  .M00_AXI_0_rready     (AXI_SDRAM_rready),
+  .M00_AXI_0_rresp      (AXI_SDRAM_rresp),
+  .M00_AXI_0_rvalid     (AXI_SDRAM_rvalid),
+  .M00_AXI_0_wdata      (AXI_SDRAM_wdata),
+  .M00_AXI_0_wlast      (AXI_SDRAM_wlast),
+  .M00_AXI_0_wready     (AXI_SDRAM_wready),
+  .M00_AXI_0_wstrb      (AXI_SDRAM_wstrb),
+  .M00_AXI_0_wvalid     (AXI_SDRAM_wvalid)
+  // .M01_AXI_0_araddr     (M01_AXI_0_araddr),
+  // .M01_AXI_0_arburst    (M01_AXI_0_arburst),
+  // .M01_AXI_0_arcache    (M01_AXI_0_arcache),
+  // .M01_AXI_0_arlen      (M01_AXI_0_arlen),
+  // .M01_AXI_0_arlock     (M01_AXI_0_arlock),
+  // .M01_AXI_0_arprot     (M01_AXI_0_arprot),
+  // .M01_AXI_0_arqos      (M01_AXI_0_arqos),
+  // .M01_AXI_0_arready    (M01_AXI_0_arready),
+  // .M01_AXI_0_arsize     (M01_AXI_0_arsize),
+  // .M01_AXI_0_arvalid    (M01_AXI_0_arvalid),
+  // .M01_AXI_0_awaddr     (M01_AXI_0_awaddr),
+  // .M01_AXI_0_awburst    (M01_AXI_0_awburst),
+  // .M01_AXI_0_awcache    (M01_AXI_0_awcache),
+  // .M01_AXI_0_awlen      (M01_AXI_0_awlen),
+  // .M01_AXI_0_awlock     (M01_AXI_0_awlock),
+  // .M01_AXI_0_awprot     (M01_AXI_0_awprot),
+  // .M01_AXI_0_awqos      (M01_AXI_0_awqos),
+  // .M01_AXI_0_awready    (M01_AXI_0_awready),
+  // .M01_AXI_0_awsize     (M01_AXI_0_awsize),
+  // .M01_AXI_0_awvalid    (M01_AXI_0_awvalid),
+  // .M01_AXI_0_bready     (M01_AXI_0_bready),
+  // .M01_AXI_0_bresp      (M01_AXI_0_bresp),
+  // .M01_AXI_0_bvalid     (M01_AXI_0_bvalid),
+  // .M01_AXI_0_rdata      (M01_AXI_0_rdata),
+  // .M01_AXI_0_rlast      (M01_AXI_0_rlast),
+  // .M01_AXI_0_rready     (M01_AXI_0_rready),
+  // .M01_AXI_0_rresp      (M01_AXI_0_rresp),
+  // .M01_AXI_0_rvalid     (M01_AXI_0_rvalid),
+  // .M01_AXI_0_wdata      (M01_AXI_0_wdata),
+  // .M01_AXI_0_wlast      (M01_AXI_0_wlast),
+  // .M01_AXI_0_wready     (M01_AXI_0_wready),
+  // .M01_AXI_0_wstrb      (M01_AXI_0_wstrb),
+  // .M01_AXI_0_wvalid     (M01_AXI_0_wvalid)
+  );
 
-assign {sdram_udqm, sdram_ldqm} = sdram_dqm;
 
 sdram_axi
-u_sdram
+u_sdram_axi
 (
-     .clk_i(axi_clk)
-    ,.rst_i(axi_rst)
-
-    // AXI port
-    ,.inport_awvalid_i( M_AXI_GP0_awvalid    )
-    ,.inport_awaddr_i(  M_AXI_GP0_awaddr )
-    ,.inport_awid_i(    M_AXI_GP0_awid   )
-    ,.inport_awlen_i(   M_AXI_GP0_awlen  )
-    ,.inport_awburst_i( M_AXI_GP0_awburst    )
-    ,.inport_wvalid_i(  M_AXI_GP0_wvalid )
-    ,.inport_wdata_i(   M_AXI_GP0_wdata  )
-    ,.inport_wstrb_i(   M_AXI_GP0_wstrb  )
-    ,.inport_wlast_i(   M_AXI_GP0_wlast  )
-    ,.inport_bready_i(  M_AXI_GP0_bready )
-    ,.inport_arvalid_i( M_AXI_GP0_arvalid    )
-    ,.inport_araddr_i(  M_AXI_GP0_araddr )
-    ,.inport_arid_i(    M_AXI_GP0_arid   )
-    ,.inport_arlen_i(   M_AXI_GP0_arlen  )
-    ,.inport_arburst_i( M_AXI_GP0_arburst    )
-    ,.inport_rready_i(  M_AXI_GP0_rready )
-    ,.inport_awready_o( M_AXI_GP0_awready    )
-    ,.inport_wready_o(  M_AXI_GP0_wready )
-    ,.inport_bvalid_o(  M_AXI_GP0_bvalid )
-    ,.inport_bresp_o(   M_AXI_GP0_bresp  )
-    ,.inport_bid_o(     M_AXI_GP0_bid    )
-    ,.inport_arready_o( M_AXI_GP0_arready    )
-    ,.inport_rvalid_o(  M_AXI_GP0_rvalid )
-    ,.inport_rdata_o(   M_AXI_GP0_rdata  )
-    ,.inport_rresp_o(   M_AXI_GP0_rresp  )
-    ,.inport_rid_o(     M_AXI_GP0_rid    )
-    ,.inport_rlast_o(   M_AXI_GP0_rlast  )
-
-    // SDRAM Interface
-    ,.sdram_clk_o()
-    ,.sdram_cke_o(sdram_cke)
-    ,.sdram_cs_o(sdram_cs_n)
-    ,.sdram_ras_o(sdram_ras_n)
-    ,.sdram_cas_o(sdram_cas_n)
-    ,.sdram_we_o(sdram_we_n)
-    ,.sdram_dqm_o(sdram_dqm)
-    ,.sdram_addr_o(sdram_a)
-    ,.sdram_ba_o(sdram_bs)
-    ,.sdram_data_input_i(sdram_data_in_w)
-    ,.sdram_data_output_o(sdram_data_out_w)
-    ,.sdram_data_out_en_o(sdram_data_out_en_w)
+     .ACLK              (ACLK),
+    .ARSTN              (ARSTN),
+    .S00_AXI_awvalid    (AXI_SDRAM_awvalid),
+    .S00_AXI_awaddr     (AXI_SDRAM_awaddr),
+    .S00_AXI_awlen      (AXI_SDRAM_awlen),
+    .S00_AXI_awburst    (AXI_SDRAM_awburst),
+    .S00_AXI_wvalid     (AXI_SDRAM_wvalid),
+    .S00_AXI_wdata      (AXI_SDRAM_wdata),
+    .S00_AXI_wstrb      (AXI_SDRAM_wstrb),
+    .S00_AXI_wlast      (AXI_SDRAM_wlast),
+    .S00_AXI_bready     (AXI_SDRAM_bready),
+    .S00_AXI_arvalid    (AXI_SDRAM_arvalid),
+    .S00_AXI_araddr     (AXI_SDRAM_araddr),
+    .S00_AXI_arlen      (AXI_SDRAM_arlen),
+    .S00_AXI_arburst    (AXI_SDRAM_arburst),
+    .S00_AXI_rready     (AXI_SDRAM_rready),
+    .sdram_data_input   (sdram_core_data_input),
+    .S00_AXI_awready    (AXI_SDRAM_awready),
+    .S00_AXI_wready     (AXI_SDRAM_wready),
+    .S00_AXI_bvalid     (AXI_SDRAM_bvalid),
+    .S00_AXI_bresp      (AXI_SDRAM_bresp),
+    .S00_AXI_arready    (AXI_SDRAM_arready),
+    .S00_AXI_rvalid     (AXI_SDRAM_rvalid),
+    .S00_AXI_rdata      (AXI_SDRAM_rdata),
+    .S00_AXI_rresp      (AXI_SDRAM_rresp),
+    .S00_AXI_rlast      (AXI_SDRAM_rlast),
+    .sdram_cke          (sdram_core_cke),
+    .sdram_cs           (sdram_core_cs),
+    .sdram_ras          (sdram_core_ras),
+    .sdram_cas          (sdram_core_cas),
+    .sdram_we           (sdram_core_we),
+    .sdram_dqm          (sdram_core_dqm),
+    .sdram_addr         (sdram_core_addr),
+    .sdram_ba           (sdram_core_ba),
+    .sdram_data_output  (sdram_core_data_output),
+    .sdram_data_out_en  (sdram_core_data_out_en)
 );
 
-ODDR2 
-#(
-    .DDR_ALIGNMENT("NONE"),
-    .INIT(1'b0),
-    .SRTYPE("SYNC")
-)
-u_clock_delay
+
+sdram_io
+u_sdram_io
 (
-    .Q(clk_sdram),
-    .C0(axi_clk),
-    .C1(~axi_clk),
-    .CE(1'b1),
-    .R(1'b0),
-    .S(1'b0),
-    .D0(1'b0),
-    .D1(1'b1)
+    .clk                     (ACLK),
+    .sdram_core_cke          (sdram_core_cke),
+    .sdram_core_cs           (sdram_core_cs),
+    .sdram_core_ras          (sdram_core_ras),
+    .sdram_core_cas          (sdram_core_cas),
+    .sdram_core_we           (sdram_core_we),
+    .sdram_core_dqm          (sdram_core_dqm),
+    .sdram_core_addr         (sdram_core_addr),
+    .sdram_core_ba           (sdram_core_ba),
+    .sdram_core_data_output  (sdram_core_data_output),
+    .sdram_core_data_out_en  (sdram_core_data_out_en),
+    .sdram_core_data_input   (sdram_core_data_input),
+    .clk_sdram               (clk_sdram),
+    .sdram_cke               (sdram_cke),
+    .sdram_cs_n              (sdram_cs_n),
+    .sdram_ras_n             (sdram_ras_n),
+    .sdram_cas_n             (sdram_cas_n),
+    .sdram_we_n              (sdram_we_n),
+    .sdram_ldqm              (sdram_ldqm),
+    .sdram_udqm              (sdram_udqm),
+    .sdram_a                 (sdram_a),
+    .sdram_bs                (sdram_bs),
+    .sdram_dq                (sdram_dq)
 );
-
-genvar i;
-for (i=0; i < 16; i = i + 1) 
-begin
-  IOBUF 
-  #(
-    .DRIVE(12),
-    .IOSTANDARD("LVTTL"),
-    .SLEW("FAST")
-  )
-  u_data_buf
-  (
-    .O(sdram_data_in_w[i]),
-    .IO(sdram_dq[i]),
-    .I(sdram_data_out_w[i]),
-    .T(~sdram_data_out_en_w)
-  );
-end
-
 
 endmodule

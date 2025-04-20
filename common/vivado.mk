@@ -36,6 +36,7 @@
 #
 ###################################################################
 
+
 # phony targets
 .PHONY: fpga vivado program flash tmpclean clean distclean
 
@@ -46,9 +47,15 @@
 CONFIG ?= config.mk
 -include $(CONFIG)
 
+ROOT ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+BUILD ?= $(ROOT)/build/
+
+HW_SERVER ?= 127.0.0.1:3121
+HW_DEVICE_IDX ?= 1
+
 FPGA_TOP ?= fpga
 PROJECT ?= $(FPGA_TOP)
-XDC_FILES ?= $(PROJECT).xdc
+XDC_FILES ?= $(BUILD)/$(PROJECT).xdc
 
 # handle file list files
 process_f_file = $(call process_f_files,$(addprefix $(dir $1),$(shell cat $1)))
@@ -68,21 +75,25 @@ INC_FILES := $(call uniq_base,$(call process_f_files,$(INC_FILES)))
 # distclean: remove archived output files
 ###################################################################
 
+PROJECTFILE = $(BUILD)/$(PROJECT).xpr
+
 all: fpga
 
-fpga: $(PROJECT).bit
+fpga: $(BUILD)/$(PROJECT).bit
 
-vivado: $(PROJECT).xpr
-	vivado $(PROJECT).xpr
+vivado: $(PROJECTFILE)
+	cd $(BUILD); vivado $<
 
-tmpclean::
-	-rm -rf *.log *.jou *.cache *.gen *.hbs *.hw *.ip_user_files *.runs *.xpr *.html *.xml *.sim *.srcs *.str .Xil defines.v
-	-rm -rf create_project.tcl update_config.tcl run_synth.tcl run_impl.tcl generate_bit.tcl
+# tmpclean::
+# 	-rm -rf *.log *.jou *.cache *.gen *.hbs *.hw *.ip_user_files *.runs *.xpr *.html *.xml *.sim *.srcs *.str .Xil defines.v
+# 	-rm -rf create_project.tcl update_config.tcl run_synth.tcl run_impl.tcl generate_bit.tcl
 
-clean:: tmpclean
-	-rm -rf *.bit *.bin *.ltx *.xsa program.tcl generate_mcs.tcl *.mcs *.prm flash.tcl
-	-rm -rf *_utilization.rpt *_utilization_hierarchical.rpt
-	-rm -rf rev
+clean::
+	rm -rf $(BUILD)
+	
+# -rm -rf *.bit *.bin *.ltx *.xsa program.tcl generate_mcs.tcl *.mcs *.prm flash.tcl
+# -rm -rf *_utilization.rpt *_utilization_hierarchical.rpt
+# -rm -rf rev
 
 distclean:: clean
 	-rm -rf rev
@@ -96,10 +107,11 @@ distclean:: clean
 # create fresh project if Makefile or IP files have changed
 # create_project.tcl: Makefile $(XCI_FILES) $(IP_TCL_FILES)
 
-create_project.tcl: $(XCI_FILES) $(IP_TCL_FILES)
-	rm -rf defines.v
-	touch defines.v
-	for x in $(DEFS); do echo '`define' $$x >> defines.v; done
+$(BUILD)/create_project.tcl: $(XCI_FILES) $(IP_TCL_FILES)
+	-mkdir $(BUILD)
+	rm -rf $(BUILD)/defines.v
+	touch $(BUILD)/defines.v
+	for x in $(DEFS); do echo '`define' $$x >> $(BUILD)/defines.v; done
 	echo "create_project -force -part $(FPGA_PART) $(PROJECT)" > $@
 	echo "add_files -fileset sources_1 defines.v $(SYN_FILES)" >> $@
 	echo "set_property top $(FPGA_TOP) [current_fileset]" >> $@
@@ -109,74 +121,74 @@ create_project.tcl: $(XCI_FILES) $(IP_TCL_FILES)
 	for x in $(CONFIG_TCL_FILES); do echo "source $$x" >> $@; done
 
 # source config TCL scripts if any source file has changed
-update_config.tcl: $(CONFIG_TCL_FILES) $(SYN_FILES) $(INC_FILES) $(XDC_FILES)
-	echo "open_project -quiet $(PROJECT).xpr" > $@
+$(BUILD)/update_config.tcl: $(CONFIG_TCL_FILES) $(SYN_FILES) $(INC_FILES) $(XDC_FILES)
+	echo "open_project -quiet $(PROJECTFILE)" > $@
 	for x in $(CONFIG_TCL_FILES); do echo "source $$x" >> $@; done
 
-$(PROJECT).xpr: create_project.tcl update_config.tcl
-	vivado -nojournal -nolog -mode batch $(foreach x,$?,-source $x)
+$(PROJECTFILE): $(BUILD)/create_project.tcl $(BUILD)/update_config.tcl
+	cd $(BUILD); vivado -nojournal -nolog -mode batch $(foreach x,$?,-source $x)
 
 # synthesis run
-$(PROJECT).runs/synth_1/$(PROJECT).dcp: create_project.tcl update_config.tcl $(SYN_FILES) $(INC_FILES) $(XDC_FILES) | $(PROJECT).xpr
-	echo "open_project $(PROJECT).xpr" > run_synth.tcl
-	echo "reset_run synth_1" >> run_synth.tcl
-	echo "launch_runs -jobs 4 synth_1" >> run_synth.tcl
-	echo "wait_on_run synth_1" >> run_synth.tcl
-	vivado -nojournal -nolog -mode batch -source run_synth.tcl
+$(BUILD)/$(PROJECT).runs/synth_1/$(PROJECT).dcp: $(BUILD)/create_project.tcl $(BUILD)/update_config.tcl $(SYN_FILES) $(INC_FILES) $(XDC_FILES) | $(PROJECTFILE)
+	echo "open_project $(PROJECTFILE)" > $(BUILD)/run_synth.tcl
+	echo "reset_run synth_1" >> $(BUILD)/run_synth.tcl
+	echo "launch_runs -jobs 4 synth_1" >> $(BUILD)/run_synth.tcl
+	echo "wait_on_run synth_1" >> $(BUILD)/run_synth.tcl
+	cd $(BUILD); vivado -nojournal -nolog -mode batch -source $(BUILD)/run_synth.tcl
 
 # implementation run
-$(PROJECT).runs/impl_1/$(PROJECT)_routed.dcp: $(PROJECT).runs/synth_1/$(PROJECT).dcp
-	echo "open_project $(PROJECT).xpr" > run_impl.tcl
-	echo "reset_run impl_1" >> run_impl.tcl
-	echo "launch_runs -jobs 4 impl_1" >> run_impl.tcl
-	echo "wait_on_run impl_1" >> run_impl.tcl
-	echo "open_run impl_1" >> run_impl.tcl
-	echo "report_utilization -file $(PROJECT)_utilization.rpt" >> run_impl.tcl
-	echo "report_utilization -hierarchical -file $(PROJECT)_utilization_hierarchical.rpt" >> run_impl.tcl
-	vivado -nojournal -nolog -mode batch -source run_impl.tcl
+$(BUILD)/$(PROJECT).runs/impl_1/$(PROJECT)_routed.dcp: $(BUILD)/$(PROJECT).runs/synth_1/$(PROJECT).dcp
+	echo "open_project $(PROJECTFILE)" > $(BUILD)/run_impl.tcl
+	echo "reset_run impl_1" >> $(BUILD)/run_impl.tcl
+	echo "launch_runs -jobs 4 impl_1" >> $(BUILD)/run_impl.tcl
+	echo "wait_on_run impl_1" >> $(BUILD)/run_impl.tcl
+	echo "open_run impl_1" >> $(BUILD)/run_impl.tcl
+	echo "report_utilization -file $(PROJECT)_utilization.rpt" >> $(BUILD)/run_impl.tcl
+	echo "report_utilization -hierarchical -file $(PROJECT)_utilization_hierarchical.rpt" >> $(BUILD)/run_impl.tcl
+	cd $(BUILD); vivado -nojournal -nolog -mode batch -source $(BUILD)/run_impl.tcl
 
 # output files (including potentially bit, bin, ltx, and xsa)
-$(PROJECT).bit $(PROJECT).bin $(PROJECT).ltx $(PROJECT).xsa: $(PROJECT).runs/impl_1/$(PROJECT)_routed.dcp
-	echo "open_project $(PROJECT).xpr" > generate_bit.tcl
-	echo "open_run impl_1" >> generate_bit.tcl
-	echo "write_bitstream -force -bin_file $(PROJECT).runs/impl_1/$(PROJECT).bit" >> generate_bit.tcl
-	echo "write_debug_probes -force $(PROJECT).runs/impl_1/$(PROJECT).ltx" >> generate_bit.tcl
-	echo "write_hw_platform -fixed -force -include_bit $(PROJECT).xsa" >> generate_bit.tcl
-	vivado -nojournal -nolog -mode batch -source generate_bit.tcl
-	ln -f -s $(PROJECT).runs/impl_1/$(PROJECT).bit .
-	ln -f -s $(PROJECT).runs/impl_1/$(PROJECT).bin .
-	if [ -e $(PROJECT).runs/impl_1/$(PROJECT).ltx ]; then ln -f -s $(PROJECT).runs/impl_1/$(PROJECT).ltx .; fi
+$(BUILD)/$(PROJECT).bit $(BUILD)/$(PROJECT).bin $(BUILD)/$(PROJECT).ltx $(BUILD)/$(PROJECT).xsa: $(BUILD)/$(PROJECT).runs/impl_1/$(PROJECT)_routed.dcp
+	echo "open_project $(PROJECTFILE)" > $(BUILD)/generate_bit.tcl
+	echo "open_run impl_1" >> $(BUILD)/generate_bit.tcl
+	echo "write_bitstream -force -bin_file $(PROJECT).runs/impl_1/$(PROJECT).bit" >> $(BUILD)/generate_bit.tcl
+	echo "write_debug_probes -force $(PROJECT).runs/impl_1/$(PROJECT).ltx" >> $(BUILD)/generate_bit.tcl
+	echo "write_hw_platform -fixed -force -include_bit $(PROJECT).xsa" >> $(BUILD)/generate_bit.tcl
+	cd $(BUILD); vivado -nojournal -nolog -mode batch -source $(BUILD)/generate_bit.tcl
+	ln -f -s $(BUILD)/$(PROJECT).runs/impl_1/$(PROJECT).bit $(BUILD)
+	ln -f -s $(BUILD)/$(PROJECT).runs/impl_1/$(PROJECT).bin $(BUILD)
+	if [ -e $(BUILD)/$(PROJECT).runs/impl_1/$(PROJECT).ltx ]; then ln -f -s $(BUILD)/$(PROJECT).runs/impl_1/$(PROJECT).ltx $(BUILD); fi
 	mkdir -p rev
 	COUNT=100; \
 	while [ -e rev/$(PROJECT)_rev$$COUNT.bit ]; \
 	do COUNT=$$((COUNT+1)); done; \
-	cp -pv $(PROJECT).runs/impl_1/$(PROJECT).bit rev/$(PROJECT)_rev$$COUNT.bit; \
-	cp -pv $(PROJECT).runs/impl_1/$(PROJECT).bin rev/$(PROJECT)_rev$$COUNT.bin; \
-	if [ -e $(PROJECT).runs/impl_1/$(PROJECT).ltx ]; then cp -pv $(PROJECT).runs/impl_1/$(PROJECT).ltx rev/$(PROJECT)_rev$$COUNT.ltx; fi; \
-	if [ -e $(PROJECT).xsa ]; then cp -pv $(PROJECT).xsa rev/$(PROJECT)_rev$$COUNT.xsa; fi
+	cp -pv $(BUILD)/$(PROJECT).runs/impl_1/$(PROJECT).bit rev/$(PROJECT)_rev$$COUNT.bit; \
+	cp -pv $(BUILD)/$(PROJECT).runs/impl_1/$(PROJECT).bin rev/$(PROJECT)_rev$$COUNT.bin; \
+	if [ -e $(BUILD)/$(PROJECT).runs/impl_1/$(PROJECT).ltx ]; then cp -pv $(BUILD)/$(PROJECT).runs/impl_1/$(PROJECT).ltx rev/$(PROJECT)_rev$$COUNT.ltx; fi; \
+	if [ -e $(BUILD)/$(PROJECT).xsa ]; then cp -pv $(BUILD)/$(PROJECT).xsa rev/$(PROJECT)_rev$$COUNT.xsa; fi
 
-program: $(PROJECT).bit
-	echo "open_hw_manager" > program.tcl
-	echo "connect_hw_server" >> program.tcl
-	echo "open_hw_target" >> program.tcl
-	echo "current_hw_device [lindex [get_hw_devices] 0]" >> program.tcl
-	echo "refresh_hw_device -update_hw_probes false [current_hw_device]" >> program.tcl
-	echo "set_property PROGRAM.FILE {$(PROJECT).bit} [current_hw_device]" >> program.tcl
-	echo "program_hw_devices [current_hw_device]" >> program.tcl
-	echo "exit" >> program.tcl
-	vivado -nojournal -nolog -mode batch -source program.tcl
+program: $(BUILD)/$(PROJECT).bit
+	echo "open_hw_manager" > $(BUILD)/program.tcl
+	echo "connect_hw_server -url TCP:$(HW_SERVER)" >> $(BUILD)/program.tcl
+	echo "open_hw_target" >> $(BUILD)/program.tcl
+	echo "current_hw_device [lindex [get_hw_devices] $(HW_DEVICE_IDX)]" >> $(BUILD)/program.tcl
+	echo "refresh_hw_device -update_hw_probes false [current_hw_device]" >> $(BUILD)/program.tcl
+	echo "set_property PROGRAM.FILE {$(PROJECT).bit} [current_hw_device]" >> $(BUILD)/program.tcl
+	echo "program_hw_devices [current_hw_device]" >> $(BUILD)/program.tcl
+	echo "exit" >> $(BUILD)/program.tcl
+	cd $(BUILD); vivado -nojournal -nolog -mode batch -source $(BUILD)/program.tcl
 
-$(PROJECT).mcs $(PROJECT).prm: $(PROJECT).bit
-	echo "write_cfgmem -force -format mcs -size 16 -interface SPIx4 -loadbit {up 0x0000000 $*.bit} -checksum -file $*.mcs" > generate_mcs.tcl
-	echo "exit" >> generate_mcs.tcl
-	vivado -nojournal -nolog -mode batch -source generate_mcs.tcl
+$(BUILD)/$(PROJECT).mcs $(BUILD)/$(PROJECT).prm: $(BUILD)/$(PROJECT).bit
+	echo "write_cfgmem -force -format mcs -size 16 -interface SPIx4 -loadbit {up 0x0000000 $*.bit} -checksum -file $*.mcs" > $(BUILD)/generate_mcs.tcl
+	echo "exit" >> $(BUILD)/generate_mcs.tcl
+	vivado -nojournal -nolog -mode batch -source $(BUILD)/generate_mcs.tcl
 	mkdir -p rev
 	COUNT=100; \
 	while [ -e rev/$*_rev$$COUNT.bit ]; \
 	do COUNT=$$((COUNT+1)); done; \
 	COUNT=$$((COUNT-1)); \
 	for x in .mcs .prm; \
-	do cp $*$$x rev/$*_rev$$COUNT$$x; \
+	do cp $(BUILD)/$*$$x rev/$*_rev$$COUNT$$x; \
 	echo "Output: rev/$*_rev$$COUNT$$x"; done;
 
 # flash: $(PROJECT).mcs $(PROJECT).prm
