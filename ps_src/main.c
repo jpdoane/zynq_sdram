@@ -1,79 +1,51 @@
-/******************************************************************************
-* Copyright (C) 2023 Advanced Micro Devices, Inc. All Rights Reserved.
-* SPDX-License-Identifier: MIT
-******************************************************************************/
-/*
- * helloworld.c: simple test application
- *
- * This application configures UART 16550 to baud rate 9600.
- * PS7 UART (Zynq) is not initialized by this application, since
- * bootrom/bsp configures it to baud rate 115200
- *
- * ------------------------------------------------
- * | UART TYPE   BAUD RATE                        |
- * ------------------------------------------------
- *   uartns550   9600
- *   uartlite    Configurable only in HW design
- *   ps7_uart    115200 (configured by bootrom/bsp)
- */
-
 #include <stdio.h>
-// #include "platform.h"
 #include "xil_printf.h"
-
 #include <sleep.h>
-#define AXI_BASEADDR 0x41000000
 
-// u32 ramval(u32 n) { return 0xdeadbeef + (n<<16); }
-u32 ramval(u32 n){
-    return n ^ 0xFDB97531;
-}
+#define SDRAM_BASEADDR   XPAR_M00_AXI_0_BASEADDR
+#define SDRAM_SIZE       (1 << 24)
+
+u32 ramval(u32 n) { return n ^ 0xFDB97531; }
 
 int main()
 {
-    // init_platform();
+    xil_printf("\n\n\n\n\rSDRAM check on AXI bus: 0x%x\n\r", SDRAM_BASEADDR);
 
-    print("Hello World SDRAM test\n\r");
-    // inbyte();
-
-	u32 x;
     int valid;
-
-	u32* sdram = (u32*) AXI_BASEADDR;
-
-    int Ncheck = 0x8000000;
+	u32 x;
+	u32* sdram = (u32*) SDRAM_BASEADDR;
+    int Ncheck = SDRAM_SIZE/4;
 
     while (1) {
-        xil_printf("\n\nInitializing RAM...\r\n");
+        xil_printf("Initializing [0x0-0x%x]...\r\n", Ncheck-1);
         for (int n=0; n < Ncheck; n++)
         {
+            // xil_printf("writing 0x%x...\r\n", n);
             sdram[n] = ramval(n);
-            // xil_printf("write 0x%x\r\n", n);
         }
 
-        xil_printf("Reading RAM 0x0...0x%x...\r\n", Ncheck-1);
+        xil_printf("Checking [0x0-0x%x]...", Ncheck-1);
         valid = 1;
-        for (u32 n=0; n<Ncheck; n++)
+        for (int n=0; n<Ncheck; n++)
         {
-        x = sdram[n];
+            // xil_printf("reading 0x%x...\r\n", n);
+            x = sdram[n];
             if(x != ramval(n))
             {
-                xil_printf("[0x%x] read 0x%x but expected 0x%x\r\n", n, x, ramval(n));
+                xil_printf("[0x%x]: read 0x%x but expected 0x%x\r\n", n, x, ramval(n));
                 valid = 0;
             }
             // else
             //     xil_printf("read 0x%x\r\n", n);
 
-
         }
         if(valid)
-            xil_printf("RAM is valid!\r\n");
+            xil_printf("Passed :)\r\n\n");
         else
-            xil_printf("RAM has issues :(\r\n");
+            xil_printf("Failed :(\r\n\n");
 
-        usleep(1000000);
+        usleep(100000);
     }
 
-    // cleanup_platform();
     return 0;
 }

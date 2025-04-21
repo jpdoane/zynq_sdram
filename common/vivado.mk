@@ -44,9 +44,6 @@
 .PRECIOUS: %.xpr %.bit %.bin %.ltx %.xsa %.mcs %.prm
 .SECONDARY:
 
-CONFIG ?= config.mk
--include $(CONFIG)
-
 ROOT ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 BUILD ?= $(ROOT)/build/
 
@@ -77,25 +74,12 @@ INC_FILES := $(call uniq_base,$(call process_f_files,$(INC_FILES)))
 
 PROJECTFILE = $(BUILD)/$(PROJECT).xpr
 
-all: fpga
-
 fpga: $(BUILD)/$(PROJECT).bit
 
 vivado: $(PROJECTFILE)
 	cd $(BUILD); vivado $<
-
-# tmpclean::
-# 	-rm -rf *.log *.jou *.cache *.gen *.hbs *.hw *.ip_user_files *.runs *.xpr *.html *.xml *.sim *.srcs *.str .Xil defines.v
-# 	-rm -rf create_project.tcl update_config.tcl run_synth.tcl run_impl.tcl generate_bit.tcl
-
-clean::
-	rm -rf $(BUILD)
 	
-# -rm -rf *.bit *.bin *.ltx *.xsa program.tcl generate_mcs.tcl *.mcs *.prm flash.tcl
-# -rm -rf *_utilization.rpt *_utilization_hierarchical.rpt
-# -rm -rf rev
-
-distclean:: clean
+distclean::
 	-rm -rf rev
 
 ###################################################################
@@ -108,7 +92,7 @@ distclean:: clean
 # create_project.tcl: Makefile $(XCI_FILES) $(IP_TCL_FILES)
 
 $(BUILD)/create_project.tcl: $(XCI_FILES) $(IP_TCL_FILES)
-	-mkdir $(BUILD)
+	mkdir -p $(BUILD)
 	rm -rf $(BUILD)/defines.v
 	touch $(BUILD)/defines.v
 	for x in $(DEFS); do echo '`define' $$x >> $(BUILD)/defines.v; done

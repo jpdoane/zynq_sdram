@@ -1,10 +1,5 @@
 PROJECT=zynq_sdram
 
-# FPGA settings
-FPGA_PART = xc7z020clg400-1
-FPGA_TOP = zynq_sdram
-FPGA_ARCH = zynq7
-
 ROOT = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 BUILD = $(ROOT)/build
 BOARD_PATH = $(ROOT)/board
@@ -26,8 +21,12 @@ XDC_FILES = $(BOARD_PATH)/artyz7.xdc
 XDC_FILES += $(BOARD_PATH)/debug.xdc
 
 
+include config.mk
 include $(ROOT)/common/vivado.mk
 include $(ROOT)/common/zynq.mk
 
+all:: target
 
+clean::
+	rm -rf $(BUILD)
 
