@@ -18,15 +18,15 @@ CONFIG.DATA_WIDTH {32} \
 CONFIG.PROTOCOL {AXI4} \
 ] $M00_AXI_0
 
-set M01_AXI_0 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M01_AXI_0 ]
-set_property -dict [ list \
-CONFIG.ADDR_WIDTH {32} \
-CONFIG.DATA_WIDTH {32} \
-CONFIG.PROTOCOL {AXI4} \
-] $M01_AXI_0
+# set M01_AXI_0 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M01_AXI_0 ]
+# set_property -dict [ list \
+# CONFIG.ADDR_WIDTH {32} \
+# CONFIG.DATA_WIDTH {32} \
+# CONFIG.PROTOCOL {AXI4} \
+# ] $M01_AXI_0
 
-## axi lite example...
-# set M00_AXI_0 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M_AXI_0 ]
+# # axi lite example...
+# set M00_AXI_0 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M00_AXI_0 ]
 #   set_property -dict [ list \
 #    CONFIG.ADDR_WIDTH {32} \
 #    CONFIG.DATA_WIDTH {32} \
@@ -35,6 +35,16 @@ CONFIG.PROTOCOL {AXI4} \
 #    CONFIG.NUM_WRITE_OUTSTANDING {1} \
 #    CONFIG.PROTOCOL {AXI4LITE} \
 # ] $M00_AXI_0
+
+# set M01_AXI_0 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M01_AXI_0 ]
+#   set_property -dict [ list \
+#    CONFIG.ADDR_WIDTH {32} \
+#    CONFIG.DATA_WIDTH {32} \
+#    CONFIG.HAS_BURST {0} \
+#    CONFIG.NUM_READ_OUTSTANDING {1} \
+#    CONFIG.NUM_WRITE_OUTSTANDING {1} \
+#    CONFIG.PROTOCOL {AXI4LITE} \
+# ] $M01_AXI_0
 
 # set S00_AXI_0 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S00_AXI_0 ]
 #   set_property -dict [ list \
@@ -49,9 +59,8 @@ CONFIG.PROTOCOL {AXI4} \
 
 # Create ports
 set ACLK_in [ create_bd_port -dir I -type clk ACLK_in ]
-set_property -dict [ list \
-CONFIG.ASSOCIATED_BUSIF {M00_AXI_0:M01_AXI_0:S00_AXI_0} \
-] $ACLK_in
+# set_property -dict [ list CONFIG.ASSOCIATED_BUSIF {M00_AXI_0:M01_AXI_0:S00_AXI_0} ] $ACLK_in
+set_property -dict [ list CONFIG.ASSOCIATED_BUSIF {M00_AXI_0} ] $ACLK_in
 set CLK1 [ create_bd_port -dir O -type clk CLK1 ]
 set CLK2 [ create_bd_port -dir O -type clk CLK2 ]
 set ARST [ create_bd_port -dir O -from 0 -to 0 -type rst ARST ]
@@ -611,7 +620,7 @@ connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [
 connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
 connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins processing_system7_0/M_AXI_GP0] [get_bd_intf_pins smartconnect_0/S00_AXI]
 connect_bd_intf_net -intf_net smartconnect_0_M00_AXI [get_bd_intf_ports M00_AXI_0] [get_bd_intf_pins smartconnect_0/M00_AXI]
-connect_bd_intf_net -intf_net smartconnect_0_M01_AXI [get_bd_intf_ports M01_AXI_0] [get_bd_intf_pins smartconnect_0/M01_AXI]
+# connect_bd_intf_net -intf_net smartconnect_0_M01_AXI [get_bd_intf_ports M01_AXI_0] [get_bd_intf_pins smartconnect_0/M01_AXI]
 # connect_bd_intf_net -intf_net S00_AXI_0_1 [get_bd_intf_ports S00_AXI_0] [get_bd_intf_pins smartconnect_0/S01_AXI]
 
 # Create port connections
@@ -632,8 +641,8 @@ connect_bd_net -net processing_system7_0_FCLK_RESET0_N  [get_bd_pins processing_
 [get_bd_pins proc_sys_reset_0/ext_reset_in]
 
 # Create address segments
-assign_bd_address -offset 0x40000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M00_AXI_0/Reg] -force
-assign_bd_address -offset 0x41000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M01_AXI_0/Reg] -force
+assign_bd_address -offset 0x40000000 -range 0x02000000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M00_AXI_0/Reg] -force
+# assign_bd_address -offset 0x41000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs M01_AXI_0/Reg] -force
 # assign_bd_address -offset 0x40000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces S00_AXI_0] [get_bd_addr_segs M00_AXI_0/Reg] -force
 # assign_bd_address -offset 0x41000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces S00_AXI_0] [get_bd_addr_segs M01_AXI_0/Reg] -force
 

@@ -2,31 +2,26 @@ PROJECT=zynq_sdram
 
 ROOT = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 BUILD = $(ROOT)/build
-BOARD_PATH = $(ROOT)/board
+ZYNQ_COMMON = $(ROOT)/zynq_common
 
-# ps config
-IP_TCL_FILES = $(ROOT)/common/zynq_ps.tcl
-
-PS_SOURCE = $(ROOT)/ps_src/main.c
-
-# Files for synthesis
+# PL hdl firmware
 SYN_FILES =  $(ROOT)/hdl/top.sv
 SYN_FILES += $(ROOT)/hdl/sdram_axi_core.v
 SYN_FILES += $(ROOT)/hdl/sdram_axi_pmem.v
 SYN_FILES += $(ROOT)/hdl/sdram_axi.v
-SYN_FILES += $(ROOT)/hdl/sdram_io.v
+SYN_FILES += $(ROOT)/hdl/sdram_io.sv
+FPGA_TOP = zynq_sdram
 
-# XDC files
-XDC_FILES = $(BOARD_PATH)/artyz7.xdc
-XDC_FILES += $(BOARD_PATH)/debug.xdc
+# constraints
+XDC_FILES = $(ZYNQ_COMMON)/artyz7.xdc
 
+# PS software
+IP_TCL_FILES = $(ZYNQ_COMMON)/zynq_ps.tcl
+PS_SOURCE = $(ROOT)/ps_src/main.c
 
-include config.mk
-include $(ROOT)/common/vivado.mk
-include $(ROOT)/common/zynq.mk
+include $(ZYNQ_COMMON)/vivado.mk
+include $(ZYNQ_COMMON)/zynq.mk
 
-all:: target
-
-clean::
-	rm -rf $(BUILD)
-
+TTY_DEV = /dev/ttyUSB1
+tty:
+	sudo screen $(TTY_DEV) 115200

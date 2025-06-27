@@ -134,30 +134,32 @@ localparam SDRAM_TRFC_CYCLES = (60 + (CYCLE_TIME_NS-1)) / CYCLE_TIME_NS;
 
 wire          ram_req_w = (ram_wr_w != 4'b0) | ram_rd_w;
 
-assign inport_ack_o       = ram_ack_w;
-assign inport_read_data_o = ram_read_data_w;
-assign inport_error_o     = 1'b0;
-assign inport_accept_o    = ram_accept_w;
+(* mark_debug = "true" *) assign inport_ack_o       = ram_ack_w;
+(* mark_debug = "true" *) assign inport_read_data_o = ram_read_data_w;
+(* mark_debug = "true" *) assign inport_error_o     = 1'b0;
+(* mark_debug = "true" *) assign inport_accept_o    = ram_accept_w;
 
 //-----------------------------------------------------------------
 // Registers / Wires
 //-----------------------------------------------------------------
 
 // Xilinx placement pragmas:
-//synthesis attribute IOB of command_q is "TRUE"
-//synthesis attribute IOB of addr_q is "TRUE"
-//synthesis attribute IOB of dqm_q is "TRUE"
-//synthesis attribute IOB of cke_q is "TRUE"
-//synthesis attribute IOB of bank_q is "TRUE"
-//synthesis attribute IOB of data_q is "TRUE"
+// (* IOB = "TRUE" *)   reg [CMD_W-1:0]        command_q;
+// (* IOB = "TRUE" *)   reg [SDRAM_ROW_W-1:0]  addr_q;
+// (* IOB = "TRUE" *)   reg [SDRAM_DATA_W-1:0] data_q;
+//                      reg                    data_rd_en_q;
+// (* IOB = "TRUE" *)   reg [SDRAM_DQM_W-1:0]  dqm_q;
+// (* IOB = "TRUE" *)   reg                    cke_q;
+// (* IOB = "TRUE" *)   reg [SDRAM_BANK_W-1:0] bank_q;
 
-(* IOB = "TRUE" *)   reg [CMD_W-1:0]        command_q;
-(* IOB = "TRUE" *)   reg [SDRAM_ROW_W-1:0]  addr_q;
-(* IOB = "TRUE" *)   reg [SDRAM_DATA_W-1:0] data_q;
-                     reg                    data_rd_en_q;
-(* IOB = "TRUE" *)   reg [SDRAM_DQM_W-1:0]  dqm_q;
-(* IOB = "TRUE" *)   reg                    cke_q;
-(* IOB = "TRUE" *)   reg [SDRAM_BANK_W-1:0] bank_q;
+
+reg [CMD_W-1:0]        command_q;
+reg [SDRAM_ROW_W-1:0]  addr_q;
+reg [SDRAM_DATA_W-1:0] data_q;
+reg                    data_rd_en_q;
+reg [SDRAM_DQM_W-1:0]  dqm_q;
+reg                    cke_q;
+reg [SDRAM_BANK_W-1:0] bank_q;
 
 // Buffer half word during read and write commands
 (* mark_debug = "true" *) reg [SDRAM_DATA_W-1:0] data_buffer_q;

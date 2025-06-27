@@ -1,24 +1,25 @@
 `timescale 1ns/1ps
 
+`define DEBUG (* keep="true",mark_debug="true",mark_debug_clock="u_zynq/processing_system7_0/inst/FCLK_CLK0" *)
+
 module zynq_sdram
 (
     //GPIO
-    input [1:0] SW,
+    // input [1:0] SW,
     input [3:0] btn,
     output [3:0] LED,
 
     // sdram pins
     inout logic [15:0] sdram_dq,
     output logic [12:0] sdram_a,
-    output logic [1:0] sdram_bs,
+    output logic [1:0] sdram_ba,
     output logic clk_sdram,
     output logic sdram_cke,
     output logic sdram_we_n,
     output logic sdram_cas_n,
     output logic sdram_ras_n,
     output logic sdram_cs_n,
-    output logic sdram_ldqm,
-    output logic sdram_udqm,
+    output logic [1:0] sdram_dqm,
 
     // DDR and other IO
     inout [14:0]DDR_addr,
@@ -44,8 +45,8 @@ module zynq_sdram
     inout FIXED_IO_ps_srstb
 );
 
-  assign LED[0] = SW[0];
-  assign LED[1] = 1;
+  // assign LED[0] = SW[0];
+  // assign LED[1] = 1;
 
   wire ACLK;
   wire ARST;
@@ -131,6 +132,8 @@ module zynq_sdram
   wire          sdram_core_data_out_en;
   wire  [ 15:0] sdram_core_data_input;
 
+  wire [3:0] dev_ctrl = {sdram_core_cs, sdram_core_ras, sdram_core_cas, sdram_core_we};
+  
   zynq_ps_axi
   u_zynq
   (
@@ -193,39 +196,6 @@ module zynq_sdram
   .M00_AXI_0_wready     (AXI_SDRAM_wready),
   .M00_AXI_0_wstrb      (AXI_SDRAM_wstrb),
   .M00_AXI_0_wvalid     (AXI_SDRAM_wvalid)
-  // .M01_AXI_0_araddr     (M01_AXI_0_araddr),
-  // .M01_AXI_0_arburst    (M01_AXI_0_arburst),
-  // .M01_AXI_0_arcache    (M01_AXI_0_arcache),
-  // .M01_AXI_0_arlen      (M01_AXI_0_arlen),
-  // .M01_AXI_0_arlock     (M01_AXI_0_arlock),
-  // .M01_AXI_0_arprot     (M01_AXI_0_arprot),
-  // .M01_AXI_0_arqos      (M01_AXI_0_arqos),
-  // .M01_AXI_0_arready    (M01_AXI_0_arready),
-  // .M01_AXI_0_arsize     (M01_AXI_0_arsize),
-  // .M01_AXI_0_arvalid    (M01_AXI_0_arvalid),
-  // .M01_AXI_0_awaddr     (M01_AXI_0_awaddr),
-  // .M01_AXI_0_awburst    (M01_AXI_0_awburst),
-  // .M01_AXI_0_awcache    (M01_AXI_0_awcache),
-  // .M01_AXI_0_awlen      (M01_AXI_0_awlen),
-  // .M01_AXI_0_awlock     (M01_AXI_0_awlock),
-  // .M01_AXI_0_awprot     (M01_AXI_0_awprot),
-  // .M01_AXI_0_awqos      (M01_AXI_0_awqos),
-  // .M01_AXI_0_awready    (M01_AXI_0_awready),
-  // .M01_AXI_0_awsize     (M01_AXI_0_awsize),
-  // .M01_AXI_0_awvalid    (M01_AXI_0_awvalid),
-  // .M01_AXI_0_bready     (M01_AXI_0_bready),
-  // .M01_AXI_0_bresp      (M01_AXI_0_bresp),
-  // .M01_AXI_0_bvalid     (M01_AXI_0_bvalid),
-  // .M01_AXI_0_rdata      (M01_AXI_0_rdata),
-  // .M01_AXI_0_rlast      (M01_AXI_0_rlast),
-  // .M01_AXI_0_rready     (M01_AXI_0_rready),
-  // .M01_AXI_0_rresp      (M01_AXI_0_rresp),
-  // .M01_AXI_0_rvalid     (M01_AXI_0_rvalid),
-  // .M01_AXI_0_wdata      (M01_AXI_0_wdata),
-  // .M01_AXI_0_wlast      (M01_AXI_0_wlast),
-  // .M01_AXI_0_wready     (M01_AXI_0_wready),
-  // .M01_AXI_0_wstrb      (M01_AXI_0_wstrb),
-  // .M01_AXI_0_wvalid     (M01_AXI_0_wvalid)
   );
 
 
@@ -275,6 +245,7 @@ sdram_io
 u_sdram_io
 (
     .clk                     (ACLK),
+    .rst                     (ARST),
     .sdram_core_cke          (sdram_core_cke),
     .sdram_core_cs           (sdram_core_cs),
     .sdram_core_ras          (sdram_core_ras),
@@ -292,10 +263,9 @@ u_sdram_io
     .sdram_ras_n             (sdram_ras_n),
     .sdram_cas_n             (sdram_cas_n),
     .sdram_we_n              (sdram_we_n),
-    .sdram_ldqm              (sdram_ldqm),
-    .sdram_udqm              (sdram_udqm),
+    .sdram_dqm                (sdram_dqm),
     .sdram_a                 (sdram_a),
-    .sdram_bs                (sdram_bs),
+    .sdram_ba                (sdram_ba),
     .sdram_dq                (sdram_dq)
 );
 
